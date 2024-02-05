@@ -4,7 +4,7 @@
 
 
 export default {
-  Base: '/api',
+  Base: '/',
   Users: {
     Base: '/users',
     Get: '/all',

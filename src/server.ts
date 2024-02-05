@@ -1,13 +1,11 @@
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import path from 'path';
 import helmet from 'helmet';
 import express, { Request, Response, NextFunction } from 'express';
 import logger from 'jet-logger';
+import router from './routes/router'
 
 import 'express-async-errors';
-
-import BaseRouter from '@src/routes/api';
 import Paths from '@src/constants/Paths';
 
 import EnvVars from '@src/constants/EnvVars';
@@ -15,12 +13,25 @@ import HttpStatusCodes from '@src/constants/HttpStatusCodes';
 
 import { NodeEnvs } from '@src/constants/misc';
 import { RouteError } from '@src/other/classes';
+require('dotenv').config();
 
 
 // **** Variables **** //
 
-const app = express();
+const mongoose = require('mongoose');
+const mongoDB = process.env.MONGODB_URI;
+main().catch((err) => {
+  console.log(err);
+});
+async function main() {
+  console.log('start connecting');
+  await mongoose.connect(mongoDB);
+  console.log('connected');
+}
 
+
+const app = express();
+app.use('/', router);
 
 // **** Setup **** //
 
@@ -39,8 +50,7 @@ if (EnvVars.NodeEnv === NodeEnvs.Production.valueOf()) {
   app.use(helmet());
 }
 
-// Add APIs, must be after middleware
-app.use(Paths.Base, BaseRouter);
+
 
 // Add error handler
 app.use((
@@ -60,28 +70,5 @@ app.use((
   return res.status(status).json({ error: err.message });
 });
 
-
-// ** Front-End Content ** //
-
-// Set views directory (html)
-const viewsDir = path.join(__dirname, 'views');
-app.set('views', viewsDir);
-
-// Set static directory (js and css).
-const staticDir = path.join(__dirname, 'public');
-app.use(express.static(staticDir));
-
-// Nav to users pg by default
-app.get('/', (_: Request, res: Response) => {
-  return res.redirect('/users');
-});
-
-// Redirect to login if not logged in.
-app.get('/users', (_: Request, res: Response) => {
-  return res.sendFile('users.html', { root: viewsDir });
-});
-
-
-// **** Export default **** //
 
 export default app;
