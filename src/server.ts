@@ -31,7 +31,7 @@ async function main() {
 
 
 const app = express();
-app.use('/', router);
+
 
 // **** Setup **** //
 
@@ -40,17 +40,13 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cookieParser(EnvVars.CookieProps.Secret));
 
-// Show routes called in console during development
-if (EnvVars.NodeEnv === NodeEnvs.Dev.valueOf()) {
-  app.use(morgan('dev'));
-}
-
 // Security
 if (EnvVars.NodeEnv === NodeEnvs.Production.valueOf()) {
   app.use(helmet());
 }
 
-
+app.use(morgan('dev'));
+app.use('/', router);
 
 // Add error handler
 app.use((
