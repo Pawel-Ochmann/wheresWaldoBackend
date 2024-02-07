@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import express, { Request, Response, NextFunction } from 'express';
 import logger from 'jet-logger';
 import router from './routes/router'
+import cors from 'cors';
 
 import 'express-async-errors';
 import Paths from '@src/constants/Paths';
@@ -31,7 +32,7 @@ async function main() {
 
 
 const app = express();
-
+app.use(cors());
 
 // **** Setup **** //
 
