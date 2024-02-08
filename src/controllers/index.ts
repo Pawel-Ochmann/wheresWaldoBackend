@@ -3,11 +3,11 @@ import asyncHandler from 'express-async-handler';
 import jwt from 'jsonwebtoken';
 require('dotenv').config();
 import { DateTime } from 'luxon';
-import {Model} from 'mongoose';
+import { Model } from 'mongoose';
 import Game, { GameInterface, Coordinates } from '../models/game';
+import { sortRecords, getPosition } from '../recordsHandlers';
 const GameModel = Game as Model<GameInterface>;
 const secretKey: string = process.env.SECRET_KEY as string;
-
 
 export const get = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -58,7 +58,6 @@ export const stop = asyncHandler(
         .diff(decodedDate)
         .as('milliseconds');
 
-
       const game = req.headers.game;
       const gameDocument = await GameModel.findOne({
         number: parseInt(game as string),
@@ -71,10 +70,16 @@ export const stop = asyncHandler(
       // Extract the coordinates from the game document
       const coordinates: Coordinates = gameDocument.coordinates;
 
-      // Prepare the response object
+      const tokenRecord = jwt.sign({ record: diffInMilliseconds }, secretKey);
+      const position = getPosition(
+        sortRecords(gameDocument.records),
+        diffInMilliseconds
+      );
       const response = {
         coordinates,
         record: diffInMilliseconds,
+        tokenRecord,
+        position,
       };
 
       // Send the response
@@ -82,6 +87,51 @@ export const stop = asyncHandler(
     } catch (error) {
       console.error('Error verifying token:', error);
       return res.status(401).json({ message: 'Failed to verify token' });
+    }
+  }
+);
+
+export const save = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    try {
+      const gameId = req.params.id; // Get the game ID from request parameters
+      const game: GameInterface | null = await GameModel.findOne({
+        number: gameId,
+      }).exec(); // Find the game by ID
+
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      const recordToSave = parseInt(req.headers.record as string);
+      const playerName = req.headers.playerName as string;
+
+      // Create a new record object
+      const newRecord = {
+        name: playerName,
+        record: recordToSave,
+        date: new Date(),
+      };
+
+      // Push the new record to the records array
+      game.records.push(newRecord);
+
+      // Sort the records array
+      game.records = sortRecords(game.records);
+
+      // Remove the 10th element if it exists
+      if (game.records.length > 10) {
+        game.records.splice(9, 1);
+      }
+
+      // Save the updated game document
+      await game.save();
+
+      res.status(200).json({records:game.records});
+
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 );

@@ -8,6 +8,7 @@ export interface Coordinates {
  export interface Record {
   name: string;
   record: number;
+  date:Date
 }
 
 export interface GameInterface extends Document {
@@ -26,6 +27,7 @@ const GameSchema = new Schema<GameInterface>({
     {
       name: { type: String, required: true },
       record: { type: Number, required: true },
+      date: { type: Date, required: true },
     },
   ],
 });
