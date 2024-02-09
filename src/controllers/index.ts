@@ -70,7 +70,7 @@ export const stop = asyncHandler(
       // Extract the coordinates from the game document
       const coordinates: Coordinates = gameDocument.coordinates;
 
-      const tokenRecord = jwt.sign({ record: diffInMilliseconds }, secretKey);
+      const recordToken = jwt.sign({ record: diffInMilliseconds }, secretKey);
       const position = getPosition(
         sortRecords(gameDocument.records),
         diffInMilliseconds
@@ -78,7 +78,7 @@ export const stop = asyncHandler(
       const response = {
         coordinates,
         record: diffInMilliseconds,
-        tokenRecord,
+        recordToken,
         position,
       };
 
@@ -103,13 +103,17 @@ export const save = asyncHandler(
         return res.status(404).json({ error: 'Game not found' });
       }
 
-      const recordToSave = parseInt(req.headers.record as string);
-      const playerName = req.headers.playerName as string;
+      const recordToSave = req.body.record as string;
+      const playerName = req.body.playerName as string;
+      const recordDecoded = jwt.verify(recordToSave, secretKey) as {record:number};
 
+
+
+      console.log(recordDecoded);
       // Create a new record object
       const newRecord = {
         name: playerName,
-        record: recordToSave,
+        record: recordDecoded.record,
         date: new Date(),
       };
 
