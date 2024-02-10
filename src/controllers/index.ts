@@ -9,12 +9,6 @@ import { sortRecords, getPosition } from '../recordsHandlers';
 const GameModel = Game as Model<GameInterface>;
 const secretKey: string = process.env.SECRET_KEY as string;
 
-export const get = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    res.json('main page');
-  }
-);
-
 export const start = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -136,6 +130,30 @@ export const save = asyncHandler(
     } catch (error) {
       console.error('Error:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+);
+
+export const records = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    try {
+
+      const game:GameInterface[] | null = await GameModel.find();
+
+      if (!game) {
+        return res.status(404).json({ message: 'Games not found' });
+      }
+
+      // Extract records from the game
+      const rec1 = game[0].records;
+      const rec2 = game[1].records;
+      const rec3 = game[2].records;
+
+      // Return records as response
+      res.json({ rec1, rec2, rec3 });
+    } catch (error) {
+      console.error('Error fetching records:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 );
